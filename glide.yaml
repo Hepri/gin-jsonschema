@@ -1,0 +1,5 @@
+package: github.com/Hepri/gin-jsonschema
+import:
+- package: github.com/gin-gonic/gin
+  version: ~1.1.4
+- package: github.com/xeipuuv/gojsonschema
