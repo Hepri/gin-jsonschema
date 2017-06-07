@@ -32,6 +32,11 @@ var testSchema = `
     "additionalProperties": false
 }`
 
+type testBody struct {
+	Value1 int  `json:"value1"`
+	Value2 bool `json:"value2"`
+}
+
 func TestBuildSchemaFromString(t *testing.T) {
 	sch, err := buildSchemaFromString(testSchema)
 	if err != nil {
@@ -204,4 +209,76 @@ func TestValidateSchema(t *testing.T) {
 		t.Errorf("cannot build schema from string %v", testSchema)
 	}
 	testHandlerResponses(t, ValidateSchema(okHandler, sc))
+}
+
+func makeBindJSONHandler(t *testing.T) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var js testBody
+		BindJSON(c, testSchema, &js)
+		c.Status(http.StatusOK)
+	}
+}
+
+func makeBindJSONSchemaHandler(t *testing.T) gin.HandlerFunc {
+	sch := createSchemaFromString(t, testSchema)
+
+	return func(c *gin.Context) {
+		var js testBody
+		BindJSONSchema(c, sch, &js)
+		c.Status(http.StatusOK)
+	}
+}
+
+func TestBindJSONValidate(t *testing.T) {
+	testHandlerResponses(t, Validate(makeBindJSONHandler(t), testSchema))
+}
+
+func TestBindJSONSchemaValidate(t *testing.T) {
+	testHandlerResponses(t, Validate(makeBindJSONSchemaHandler(t), testSchema))
+}
+
+func makeBindJSONUnmarshalHandler(t *testing.T) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var js testBody
+		BindJSON(c, testSchema, &js)
+		if js.Value1 != 2 {
+			t.Errorf("value1 expected to be %v but received %v", 2, js.Value1)
+		}
+		if js.Value2 != true {
+			t.Errorf("value2 expected to be %v but received %v", true, js.Value2)
+		}
+		c.Status(http.StatusOK)
+	}
+}
+
+func makeBindJSONSchemaUnmarshalHandler(t *testing.T) gin.HandlerFunc {
+	sch := createSchemaFromString(t, testSchema)
+
+	return func(c *gin.Context) {
+		var js testBody
+		BindJSONSchema(c, sch, &js)
+		if js.Value1 != 2 {
+			t.Errorf("value1 expected to be %v but received %v", 2, js.Value1)
+		}
+		if js.Value2 != true {
+			t.Errorf("value2 expected to be %v but received %v", true, js.Value2)
+		}
+		c.Status(http.StatusOK)
+	}
+}
+
+func testUnmarshalHandler(t *testing.T, handler gin.HandlerFunc) {
+	// ensure server validate requests using `testSchema`
+	ts := getTestServer(handler)
+	defer ts.Close()
+
+	testRequest(t, ts.URL, strings.NewReader(`{"value1": 2, "value2": true}`), http.StatusOK)
+}
+
+func TestBindJSONUnmarshal(t *testing.T) {
+	testUnmarshalHandler(t, Validate(makeBindJSONUnmarshalHandler(t), testSchema))
+}
+
+func TestBindJSONSchemaUnmarshal(t *testing.T) {
+	testUnmarshalHandler(t, Validate(makeBindJSONSchemaUnmarshalHandler(t), testSchema))
 }

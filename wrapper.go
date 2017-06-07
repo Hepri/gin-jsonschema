@@ -11,6 +11,8 @@ import (
 
 	"sync"
 
+	"io/ioutil"
+
 	"github.com/gin-gonic/gin"
 	"github.com/xeipuuv/gojsonschema"
 )
@@ -90,6 +92,41 @@ func ValidateSchema(handler gin.HandlerFunc, schema *gojsonschema.Schema) gin.Ha
 			handleError(c, err)
 		}
 	}
+}
+
+func BindJSON(c *gin.Context, schemaStr string, obj interface{}) error {
+	sch, err := buildSchemaFromString(schemaStr)
+	if err != nil {
+		handleError(c, err)
+		return err
+	}
+
+	return BindJSONSchema(c, sch, obj)
+}
+
+func BindJSONSchema(c *gin.Context, schema *gojsonschema.Schema, obj interface{}) (err error) {
+	defer func() {
+		if err != nil {
+			handleError(c, err)
+		}
+	}()
+
+	// validate body
+	if err = validateBodyUsingSchema(c.Request, schema); err != nil {
+		return
+	}
+
+	// read body and unmarshal json
+	var body []byte
+	if body, err = ioutil.ReadAll(c.Request.Body); err != nil {
+		return
+	}
+
+	if err = json.Unmarshal(body, obj); err != nil {
+		return
+	}
+
+	return
 }
 
 func handleError(c *gin.Context, err error) {
