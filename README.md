@@ -27,17 +27,17 @@ var testSchema string = `
 `
 
 // validate using schema as string
-r.POST("/string", schema.ValidateString(handlerFunc, testSchema))
+r.POST("/string", schema.Validate(handlerFunc, testSchema))
 
 // validate using schema as *gojsonschema.Schema
 loader := gojsonschema.NewStringLoader(testSchema)
 sc, _ := gojsonschema.NewSchema(loader)
-r.POST("/schema", schema.Validate(handlerFunc, sc))
+r.POST("/schema", schema.ValidateSchema(handlerFunc, sc))
 
 
 // using wrapper inside handler
 var someHandler = func(c *gin.Context) {
-    return schema.ValidateString(func (c *gin.Context) {
+    return schema.Validate(func (c *gin.Context) {
         c.JSON(http.StatusOK, gin.H{
             "message": "OK",
         })
