@@ -14,7 +14,6 @@ import (
 	"io/ioutil"
 
 	"github.com/gin-gonic/gin"
-	"github.com/siddontang/go/log"
 	"github.com/xeipuuv/gojsonschema"
 )
 
@@ -98,8 +97,7 @@ func ValidateSchema(handler gin.HandlerFunc, schema *gojsonschema.Schema) gin.Ha
 func BindJSON(c *gin.Context, schemaStr string, obj interface{}) error {
 	sch, err := buildSchemaFromString(schemaStr)
 	if err != nil {
-		handleError(c, err)
-		return err
+		panic(err)
 	}
 
 	return BindJSONSchema(c, sch, obj)
@@ -142,9 +140,6 @@ func handleError(c *gin.Context, err error) {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"messages": v.Errors,
 			})
-		case *ErrCannotBuildSchema:
-			c.Status(http.StatusInternalServerError)
-			log.Error(v.Error())
 		default:
 			c.Status(http.StatusInternalServerError)
 		}
