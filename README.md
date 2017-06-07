@@ -30,6 +30,16 @@ type TestBody struct {
     Value int `json:"value"`
 }
 
+
+// using BindJSON
+r.POST("/bind", func(c *gin.Context) {
+    var js TestBody
+    if schema.BindJSON(c, testSchema, &js) == nil {
+        // do stuff
+    }
+})
+
+
 // validate using schema as string
 r.POST("/string", schema.Validate(handlerFunc, testSchema))
 
@@ -49,15 +59,6 @@ var someHandler = func(c *gin.Context) {
     }, testSchema)
 }
 r.POST("/wrap_inside", someHandler)
-
-
-// using BindJSON
-r.POST("/bind", func(c *gin.Context) {
-    var js TestBody
-    if schema.BindJSON(c, testSchema, &js) == nil {
-        // do stuff
-    }
-})
 ```
 
 Read possible ways to build `*gojsonschema.Schema` in [documentation](https://github.com/xeipuuv/gojsonschema)
