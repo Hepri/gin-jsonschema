@@ -199,7 +199,7 @@ func TestValidate(t *testing.T) {
 
 func TestValidateSchema(t *testing.T) {
 	// build schema from string
-	sc, err := gojsonschema.NewSchema(gojsonschema.NewStringLoader(testSchema))
+	sc, err := buildSchemaFromString(testSchema)
 	if err != nil {
 		t.Errorf("cannot build schema from string %v", testSchema)
 	}
