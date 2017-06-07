@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 
 	"github.com/gin-gonic/gin"
+	"github.com/siddontang/go/log"
 	"github.com/xeipuuv/gojsonschema"
 )
 
@@ -65,7 +66,7 @@ func buildSchemaFromString(str string) (*gojsonschema.Schema, error) {
 		// create new schema
 		sch, err := gojsonschema.NewSchema(gojsonschema.NewStringLoader(str))
 		if err != nil {
-			return nil, err
+			return nil, NewErrCannotBuildSchema(err)
 		}
 
 		cache[str] = sch
@@ -141,6 +142,9 @@ func handleError(c *gin.Context, err error) {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"messages": v.Errors,
 			})
+		case *ErrCannotBuildSchema:
+			c.Status(http.StatusInternalServerError)
+			log.Error(v.Error())
 		default:
 			c.Status(http.StatusInternalServerError)
 		}

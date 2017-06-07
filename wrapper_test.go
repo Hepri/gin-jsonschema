@@ -60,6 +60,19 @@ func TestBuildSchemaFromString(t *testing.T) {
 	}
 }
 
+func TestBuildSchemaFromStringInvalidSchema(t *testing.T) {
+	_, err := buildSchemaFromString(`{"a"`)
+	if err == nil {
+		t.Errorf("build schema should return error, but returns nil")
+	} else {
+		switch err.(type) {
+		case *ErrCannotBuildSchema:
+		default:
+			t.Errorf("build schema should return ErrCannotBuildSchema, but returns %v", err)
+		}
+	}
+}
+
 func createRequestWithBody(t *testing.T, body io.Reader) *http.Request {
 	req, err := http.NewRequest("POST", "/", body)
 	if err != nil {
