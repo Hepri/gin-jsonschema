@@ -47,6 +47,12 @@ func TestBuildSchemaFromString(t *testing.T) {
 	if sch != sch2 {
 		t.Errorf("expected schema to be equal between calls: %v", err)
 	}
+
+	// build invalid schema error
+	_, err = buildSchemaFromString(`{"a": `)
+	if err == nil {
+		t.Errorf("build should return error, but received nil")
+	}
 }
 
 func createRequestWithBody(t *testing.T, body io.Reader) *http.Request {
