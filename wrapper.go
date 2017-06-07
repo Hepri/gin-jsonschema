@@ -39,38 +39,14 @@ func validateBodyUsingSchema(req *http.Request, schema *gojsonschema.Schema) err
 	return nil
 }
 
-func Validate(handler gin.HandlerFunc, schema *gojsonschema.Schema) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if err := validateBodyUsingSchema(c.Request, schema); err == nil {
-			handler(c)
-		} else {
-			c.Abort()
-			if err == io.EOF || err == io.ErrUnexpectedEOF {
-				c.JSON(http.StatusBadRequest, invalidJSONBodyResponse)
-			} else {
-				switch v := err.(type) {
-				case *json.SyntaxError:
-					c.JSON(http.StatusBadRequest, invalidJSONBodyResponse)
-				case *ErrSchemaValidation:
-					c.JSON(http.StatusBadRequest, gin.H{
-						"messages": v.Errors,
-					})
-				default:
-					c.Status(http.StatusInternalServerError)
-				}
-			}
-		}
-	}
-}
-
-func ValidateString(handler gin.HandlerFunc, str string) gin.HandlerFunc {
+func Validate(handler gin.HandlerFunc, str string) gin.HandlerFunc {
 	loader := gojsonschema.NewStringLoader(str)
 	sch, err := gojsonschema.NewSchema(loader)
 	if err != nil {
 		panic(fmt.Sprintf("Cannot build schema from string %v", str))
 	}
 
-	return Validate(handler, sch)
+	return ValidateSchema(handler, sch)
 }
 
 func ValidateJSONLoader(handler gin.HandlerFunc, loader gojsonschema.JSONLoader) gin.HandlerFunc {
@@ -79,5 +55,33 @@ func ValidateJSONLoader(handler gin.HandlerFunc, loader gojsonschema.JSONLoader)
 		panic(fmt.Sprintf("Cannot build schema from loader %v", loader))
 	}
 
-	return Validate(handler, sch)
+	return ValidateSchema(handler, sch)
+}
+
+func ValidateSchema(handler gin.HandlerFunc, schema *gojsonschema.Schema) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if err := validateBodyUsingSchema(c.Request, schema); err == nil {
+			handler(c)
+		} else {
+			handleError(c, err)
+		}
+	}
+}
+
+func handleError(c *gin.Context, err error) {
+	c.Abort()
+	if err == io.EOF || err == io.ErrUnexpectedEOF {
+		c.JSON(http.StatusBadRequest, invalidJSONBodyResponse)
+	} else {
+		switch v := err.(type) {
+		case *json.SyntaxError:
+			c.JSON(http.StatusBadRequest, invalidJSONBodyResponse)
+		case *ErrSchemaValidation:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"messages": v.Errors,
+			})
+		default:
+			c.Status(http.StatusInternalServerError)
+		}
+	}
 }

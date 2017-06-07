@@ -177,11 +177,11 @@ func TestValidateUsingSchema(t *testing.T) {
 	if err != nil {
 		t.Errorf("cannot build schema from string %v", testSchema)
 	}
-	testHandlerResponses(t, Validate(okHandler, sc))
+	testHandlerResponses(t, ValidateSchema(okHandler, sc))
 }
 
 func TestValidateUsingSchemaString(t *testing.T) {
-	testHandlerResponses(t, ValidateString(okHandler, testSchema))
+	testHandlerResponses(t, Validate(okHandler, testSchema))
 }
 
 func TestValidateUsingSchemaJSONLoader(t *testing.T) {
