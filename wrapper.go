@@ -9,11 +9,18 @@ import (
 
 	"fmt"
 
+	"sync"
+
 	"github.com/gin-gonic/gin"
 	"github.com/xeipuuv/gojsonschema"
 )
 
-var invalidJSONBodyResponse = gin.H{"message": "Invalid json body"}
+var (
+	invalidJSONBodyResponse = gin.H{"message": "Invalid json body"}
+
+	cache   map[string]*gojsonschema.Schema = make(map[string]*gojsonschema.Schema)
+	cacheMx sync.Mutex
+)
 
 func validateBodyUsingSchema(req *http.Request, schema *gojsonschema.Schema) error {
 	body, err := drainHTTPRequestBody(req)
@@ -39,20 +46,37 @@ func validateBodyUsingSchema(req *http.Request, schema *gojsonschema.Schema) err
 	return nil
 }
 
-func Validate(handler gin.HandlerFunc, str string) gin.HandlerFunc {
-	loader := gojsonschema.NewStringLoader(str)
-	sch, err := gojsonschema.NewSchema(loader)
-	if err != nil {
-		panic(fmt.Sprintf("Cannot build schema from string %v", str))
-	}
+func buildSchemaFromString(str string) (*gojsonschema.Schema, error) {
+	// try to get value from cache without locking, cache filled only once, so we don't need lock for each call
+	if sch, found := cache[str]; !found {
+		// if value not found, we should create new schema and put it in cache
 
-	return ValidateSchema(handler, sch)
+		// acquire cache lock
+		cacheMx.Lock()
+		defer cacheMx.Unlock()
+
+		// now read again, probably other goroutine already write value in cache
+		if sch, found = cache[str]; found {
+			return sch, nil
+		}
+
+		// create new schema
+		sch, err := gojsonschema.NewSchema(gojsonschema.NewStringLoader(str))
+		if err != nil {
+			return nil, err
+		}
+
+		cache[str] = sch
+		return sch, nil
+	} else {
+		return sch, nil
+	}
 }
 
-func ValidateJSONLoader(handler gin.HandlerFunc, loader gojsonschema.JSONLoader) gin.HandlerFunc {
-	sch, err := gojsonschema.NewSchema(loader)
+func Validate(handler gin.HandlerFunc, schemaStr string) gin.HandlerFunc {
+	sch, err := buildSchemaFromString(schemaStr)
 	if err != nil {
-		panic(fmt.Sprintf("Cannot build schema from loader %v", loader))
+		panic(fmt.Sprintf("Cannot build schema from string %v", schemaStr))
 	}
 
 	return ValidateSchema(handler, sch)

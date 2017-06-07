@@ -29,13 +29,8 @@ var testSchema string = `
 // validate using schema as string
 r.POST("/string", schema.ValidateString(handlerFunc, testSchema))
 
-
-// validate using schema as gojsonschema.JSONLoader
-loader := gojsonschema.NewStringLoader()
-r.POST("/loader", schema.ValidateJSONLoader(handlerFunc, loader))
-
-
 // validate using schema as *gojsonschema.Schema
+loader := gojsonschema.NewStringLoader(testSchema)
 sc, _ := gojsonschema.NewSchema(loader)
 r.POST("/schema", schema.Validate(handlerFunc, sc))
 
@@ -52,7 +47,7 @@ var someHandler = func(c *gin.Context) {
 r.POST("/wrap_inside", someHandler)
 ```
 
-In order to use json schema from file or other sources look at [gojsonschema documentation](https://github.com/xeipuuv/gojsonschema)
+Read possible ways to build `*gojsonschema.Schema` in [documentation](https://github.com/xeipuuv/gojsonschema)
 
 
 ## Example HTTP Service

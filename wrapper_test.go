@@ -32,6 +32,23 @@ var testSchema = `
     "additionalProperties": false
 }`
 
+func TestBuildSchemaFromString(t *testing.T) {
+	sch, err := buildSchemaFromString(testSchema)
+	if err != nil {
+		t.Fatalf("cannot build schema from string: %v", err)
+	}
+
+	// call again with same schema
+	sch2, err2 := buildSchemaFromString(testSchema)
+	if err2 != nil {
+		t.Fatalf("cannot build schema from string: %v", err)
+	}
+
+	if sch != sch2 {
+		t.Errorf("expected schema to be equal between calls: %v", err)
+	}
+}
+
 func createRequestWithBody(t *testing.T, body io.Reader) *http.Request {
 	req, err := http.NewRequest("POST", "/", body)
 	if err != nil {
@@ -60,13 +77,12 @@ func TestValidateBodyUsingSchemaEmptyBody(t *testing.T) {
 }
 
 func createSchemaFromString(t *testing.T, str string) *gojsonschema.Schema {
-	loader := gojsonschema.NewStringLoader(str)
-	schema, err := gojsonschema.NewSchema(loader)
+	sch, err := buildSchemaFromString(str)
 	if err != nil {
 		t.Fatalf("cannot create schema: %v", err)
 	}
 
-	return schema
+	return sch
 }
 
 func TestValidateBodyUsingSchemaNonJSONBody(t *testing.T) {
@@ -171,23 +187,15 @@ func testHandlerResponses(t *testing.T, handler gin.HandlerFunc) {
 	testRequest(t, ts.URL, strings.NewReader(`{"value1": 1, "value2": true}`), http.StatusOK)
 }
 
-func TestValidateUsingSchema(t *testing.T) {
+func TestValidate(t *testing.T) {
+	testHandlerResponses(t, Validate(okHandler, testSchema))
+}
+
+func TestValidateSchema(t *testing.T) {
 	// build schema from string
 	sc, err := gojsonschema.NewSchema(gojsonschema.NewStringLoader(testSchema))
 	if err != nil {
 		t.Errorf("cannot build schema from string %v", testSchema)
 	}
 	testHandlerResponses(t, ValidateSchema(okHandler, sc))
-}
-
-func TestValidateUsingSchemaString(t *testing.T) {
-	testHandlerResponses(t, Validate(okHandler, testSchema))
-}
-
-func TestValidateUsingSchemaJSONLoader(t *testing.T) {
-	loader := gojsonschema.NewStringLoader(testSchema)
-	testHandlerResponses(t, ValidateJSONLoader(okHandler, loader))
-
-	loader2 := gojsonschema.NewBytesLoader([]byte(testSchema))
-	testHandlerResponses(t, ValidateJSONLoader(okHandler, loader2))
 }
