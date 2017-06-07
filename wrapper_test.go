@@ -177,17 +177,17 @@ func TestValidateUsingSchema(t *testing.T) {
 	if err != nil {
 		t.Errorf("cannot build schema from string %v", testSchema)
 	}
-	testHandlerResponses(t, ValidateUsingSchema(okHandler, sc))
+	testHandlerResponses(t, Validate(okHandler, sc))
 }
 
 func TestValidateUsingSchemaString(t *testing.T) {
-	testHandlerResponses(t, ValidateUsingSchemaString(okHandler, testSchema))
+	testHandlerResponses(t, ValidateString(okHandler, testSchema))
 }
 
 func TestValidateUsingSchemaJSONLoader(t *testing.T) {
 	loader := gojsonschema.NewStringLoader(testSchema)
-	testHandlerResponses(t, ValidateUsingSchemaJSONLoader(okHandler, loader))
+	testHandlerResponses(t, ValidateJSONLoader(okHandler, loader))
 
 	loader2 := gojsonschema.NewBytesLoader([]byte(testSchema))
-	testHandlerResponses(t, ValidateUsingSchemaJSONLoader(okHandler, loader2))
+	testHandlerResponses(t, ValidateJSONLoader(okHandler, loader2))
 }

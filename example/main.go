@@ -28,6 +28,6 @@ var testSchema string = `
 func main() {
 	r := gin.Default()
 	// wrap handler, all invalid json schema requests will produce Bad Request
-	r.POST("/", schema.ValidateUsingSchemaString(handlerFunc, testSchema))
+	r.POST("/", schema.ValidateString(handlerFunc, testSchema))
 	r.Run(":8080")
 }

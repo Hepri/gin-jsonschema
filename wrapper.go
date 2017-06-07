@@ -39,7 +39,7 @@ func validateBodyUsingSchema(req *http.Request, schema *gojsonschema.Schema) err
 	return nil
 }
 
-func ValidateUsingSchema(handler gin.HandlerFunc, schema *gojsonschema.Schema) gin.HandlerFunc {
+func Validate(handler gin.HandlerFunc, schema *gojsonschema.Schema) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if err := validateBodyUsingSchema(c.Request, schema); err == nil {
 			handler(c)
@@ -63,21 +63,21 @@ func ValidateUsingSchema(handler gin.HandlerFunc, schema *gojsonschema.Schema) g
 	}
 }
 
-func ValidateUsingSchemaString(handler gin.HandlerFunc, str string) gin.HandlerFunc {
+func ValidateString(handler gin.HandlerFunc, str string) gin.HandlerFunc {
 	loader := gojsonschema.NewStringLoader(str)
 	sch, err := gojsonschema.NewSchema(loader)
 	if err != nil {
 		panic(fmt.Sprintf("Cannot build schema from string %v", str))
 	}
 
-	return ValidateUsingSchema(handler, sch)
+	return Validate(handler, sch)
 }
 
-func ValidateUsingSchemaJSONLoader(handler gin.HandlerFunc, loader gojsonschema.JSONLoader) gin.HandlerFunc {
+func ValidateJSONLoader(handler gin.HandlerFunc, loader gojsonschema.JSONLoader) gin.HandlerFunc {
 	sch, err := gojsonschema.NewSchema(loader)
 	if err != nil {
 		panic(fmt.Sprintf("Cannot build schema from loader %v", loader))
 	}
 
-	return ValidateUsingSchema(handler, sch)
+	return Validate(handler, sch)
 }
