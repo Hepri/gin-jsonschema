@@ -26,8 +26,13 @@ var testSchema string = `
 }
 `
 
+type TestBody struct {
+    Value int `json:"value"`
+}
+
 // validate using schema as string
 r.POST("/string", schema.Validate(handlerFunc, testSchema))
+
 
 // validate using schema as *gojsonschema.Schema
 loader := gojsonschema.NewStringLoader(testSchema)
@@ -43,8 +48,16 @@ var someHandler = func(c *gin.Context) {
         })
     }, testSchema)
 }
-
 r.POST("/wrap_inside", someHandler)
+
+
+// using BindJSON
+r.POST("/bind", func(c *gin.Context) {
+    var js TestBody
+    if schema.BindJSON(c, testSchema, &js) == nil {
+        // do stuff
+    }
+})
 ```
 
 Read possible ways to build `*gojsonschema.Schema` in [documentation](https://github.com/xeipuuv/gojsonschema)
@@ -64,10 +77,6 @@ import (
 	"github.com/Hepri/gin-jsonschema"
 )
 
-func handlerFunc(c *gin.Context) {
-	c.Status(http.StatusOK)
-}
-
 var testSchema string = `
 {
     "title": "Test Schema",
@@ -81,10 +90,32 @@ var testSchema string = `
 }
 `
 
+type testBody struct {
+	Value int `json:"value"`
+}
+
+func handlerFunc(c *gin.Context) {
+	c.Status(http.StatusOK)
+}
+
+func bindJSONHandler(c *gin.Context) {
+	var js testBody
+	if schema.BindJSON(c, testSchema, &js) == nil {
+		c.JSON(http.StatusOK, gin.H{
+			"value": js.Value,
+		})
+	}
+}
+
 func main() {
 	r := gin.Default()
+
 	// wrap handler, all invalid json schema requests will produce Bad Request
-	r.POST("/", schema.ValidateString(handlerFunc, testSchema))
+	r.POST("/validate", schema.Validate(handlerFunc, testSchema))
+
+	// use BindJSON inside handler
+	r.POST("/bind", bindJSONHandler)
 	r.Run(":8080")
 }
+
 ```
