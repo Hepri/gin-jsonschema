@@ -12,7 +12,7 @@ Dependencies :
 
 ## Usage
 
-```
+```go
 var testSchema string = `
 {
     "title": "Test Schema",
@@ -67,7 +67,7 @@ Read possible ways to build `*gojsonschema.Schema` in [documentation](https://gi
 ## Example HTTP Service
 
 
-```
+```go
 package main
 
 import (
